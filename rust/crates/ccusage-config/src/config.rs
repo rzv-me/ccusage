@@ -711,6 +711,9 @@ fn merge_override_fields(target: &mut PricingOverride, source: ConfigPricingOver
     if source.fast_multiplier.is_some() {
         target.fast_multiplier = source.fast_multiplier;
     }
+    if source.ultrafast_multiplier.is_some() {
+        target.ultrafast_multiplier = source.ultrafast_multiplier;
+    }
     if source.flex_multiplier.is_some() {
         target.flex_multiplier = source.flex_multiplier;
     }
@@ -731,6 +734,7 @@ impl From<ConfigPricingOverride> for PricingOverride {
                 .cache_read_input_token_cost_above_200k_tokens,
             max_input_tokens: value.max_input_tokens,
             fast_multiplier: value.fast_multiplier,
+            ultrafast_multiplier: value.ultrafast_multiplier,
             flex_multiplier: value.flex_multiplier,
         }
     }
@@ -775,6 +779,7 @@ impl From<ConfigCodexSpeed> for CodexSpeed {
             ConfigCodexSpeed::Auto => Self::Auto,
             ConfigCodexSpeed::Standard => Self::Standard,
             ConfigCodexSpeed::Fast => Self::Fast,
+            ConfigCodexSpeed::Ultrafast => Self::Ultrafast,
             ConfigCodexSpeed::Flex => Self::Flex,
         }
     }

@@ -120,6 +120,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
             "outputCostPerTokenAbove200kTokens": {
               "format": "double",
               "type": "number"
+            },
+            "ultrafastMultiplier": {
+              "format": "double",
+              "type": "number"
             }
           },
           "type": "object"
@@ -288,6 +292,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
             "outputCostPerTokenAbove200kTokens": {
               "format": "double",
               "type": "number"
+            },
+            "ultrafastMultiplier": {
+              "format": "double",
+              "type": "number"
             }
           },
           "type": "object"
@@ -313,6 +321,7 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
           "auto",
           "standard",
           "fast",
+          "ultrafast",
           "flex"
         ],
         "markdownDescription": "Codex speed normalization strategy.",
@@ -476,6 +485,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
               "type": "number"
             },
             "outputCostPerTokenAbove200kTokens": {
+              "format": "double",
+              "type": "number"
+            },
+            "ultrafastMultiplier": {
               "format": "double",
               "type": "number"
             }
@@ -655,6 +668,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
             "outputCostPerTokenAbove200kTokens": {
               "format": "double",
               "type": "number"
+            },
+            "ultrafastMultiplier": {
+              "format": "double",
+              "type": "number"
             }
           },
           "type": "object"
@@ -822,6 +839,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
               "type": "number"
             },
             "outputCostPerTokenAbove200kTokens": {
+              "format": "double",
+              "type": "number"
+            },
+            "ultrafastMultiplier": {
               "format": "double",
               "type": "number"
             }
@@ -1000,6 +1021,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
             "outputCostPerTokenAbove200kTokens": {
               "format": "double",
               "type": "number"
+            },
+            "ultrafastMultiplier": {
+              "format": "double",
+              "type": "number"
             }
           },
           "type": "object"
@@ -1169,6 +1194,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
             "outputCostPerTokenAbove200kTokens": {
               "format": "double",
               "type": "number"
+            },
+            "ultrafastMultiplier": {
+              "format": "double",
+              "type": "number"
             }
           },
           "type": "object"
@@ -1336,6 +1365,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
               "type": "number"
             },
             "outputCostPerTokenAbove200kTokens": {
+              "format": "double",
+              "type": "number"
+            },
+            "ultrafastMultiplier": {
               "format": "double",
               "type": "number"
             }
@@ -1546,6 +1579,10 @@ expression: "json!({\n    \"rootRef\": schema[\"$ref\"], \"rootProperties\":\n  
               "type": "number"
             },
             "outputCostPerTokenAbove200kTokens": {
+              "format": "double",
+              "type": "number"
+            },
+            "ultrafastMultiplier": {
               "format": "double",
               "type": "number"
             }

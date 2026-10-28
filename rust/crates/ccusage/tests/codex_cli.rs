@@ -180,6 +180,89 @@ fn reports_issue_1970_subagent_usage_in_daily_and_session_commands() {
     );
 }
 
+#[test]
+fn prices_ultrafast_in_focused_and_unified_reports() {
+    let fixture = ultrafast_fixture();
+    for kind in ["daily", "monthly", "session"] {
+        let report: Value =
+            serde_json::from_str(&run_cli(&fixture, &["codex", kind, "--json"])).unwrap();
+        assert_eq!(report["totals"]["totalTokens"], 3_350);
+        assert!((report["totals"]["costUSD"].as_f64().unwrap() - 0.02012).abs() < 1e-12);
+    }
+    let unified: Value = serde_json::from_str(&run_cli(&fixture, &["daily", "--json"])).unwrap();
+    assert_eq!(unified["totals"]["totalTokens"], 3_350);
+    assert!((unified["totals"]["totalCost"].as_f64().unwrap() - 0.02012).abs() < 1e-12);
+
+    for (speed, expected) in [
+        ("standard", 0.00752),
+        ("fast", 0.01504),
+        ("ultrafast", 0.04512),
+    ] {
+        let report: Value = serde_json::from_str(&run_cli(
+            &fixture,
+            &["codex", "daily", "--json", "--speed", speed],
+        ))
+        .unwrap();
+        assert_eq!(report["totals"]["totalTokens"], 3_350);
+        assert!((report["totals"]["costUSD"].as_f64().unwrap() - expected).abs() < 1e-12);
+    }
+}
+
+#[test]
+fn applies_ultrafast_speed_and_multiplier_from_ccusage_config() {
+    let fixture = ultrafast_fixture();
+    let config = fixture.write_file(
+        "ccusage.json",
+        json!({
+            "codex": { "defaults": { "speed": "ultrafast" } },
+            "defaults": { "pricingOverrides": { "gpt-6.1-sol": { "ultrafastMultiplier": 3 } } },
+        })
+        .to_string(),
+    );
+    let report: Value = serde_json::from_str(&run_cli(
+        &fixture,
+        &[
+            "codex",
+            "daily",
+            "--json",
+            "--config",
+            config.to_str().unwrap(),
+        ],
+    ))
+    .unwrap();
+    assert!((report["totals"]["costUSD"].as_f64().unwrap() - 0.02256).abs() < 1e-12);
+}
+
+fn ultrafast_fixture() -> Fixture {
+    let marker = |timestamp: &str, tier: &str| {
+        json!({
+        "timestamp": timestamp,
+        "type": "event_msg",
+        "payload": { "type": "thread_settings_applied", "thread_settings": { "service_tier": tier } },
+    }).to_string()
+    };
+    let tokens = |timestamp: &str, input: u64, cache: u64, output: u64| {
+        json!({
+            "timestamp": timestamp,
+            "type": "event_msg",
+            "payload": { "type": "token_count", "info": {
+                "model": "gpt-6.1-sol",
+                "last_token_usage": { "input_tokens": input, "cached_input_tokens": cache,
+                    "output_tokens": output, "total_tokens": input + output },
+            } },
+        })
+        .to_string()
+    };
+    fs_fixture!({
+        "codex/sessions/2026/10/27/ultrafast.jsonl": [
+            marker("2026-10-27T10:00:00Z", "ultrafast"),
+            tokens("2026-10-27T10:00:01Z", 1_200, 200, 50),
+            marker("2026-10-27T10:01:00Z", "standard"),
+            tokens("2026-10-27T10:01:01Z", 2_000, 0, 100),
+        ].join("\n"),
+    })
+}
+
 fn issue_1970_codex_fixture() -> Fixture {
     fs_fixture!({
         "codex/sessions/2026/01/05/child.jsonl":

@@ -569,6 +569,7 @@ pub enum ConfigCodexSpeed {
     Auto,
     Standard,
     Fast,
+    Ultrafast,
     Flex,
 }
 
@@ -603,6 +604,7 @@ pub struct ConfigPricingOverride {
     pub cache_read_input_token_cost_above_200k_tokens: Option<f64>,
     pub max_input_tokens: Option<u64>,
     pub fast_multiplier: Option<f64>,
+    pub ultrafast_multiplier: Option<f64>,
     pub flex_multiplier: Option<f64>,
 }
 

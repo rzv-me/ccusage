@@ -175,7 +175,7 @@ fn compact_pricing_json(json: &str) -> Option<String> {
                 fields.insert(target.to_string(), value.clone());
             }
         }
-        for tier in ["fast", "flex"] {
+        for tier in ["fast", "flex", "ultrafast"] {
             if let Some(multiplier) = pricing
                 .get("provider_specific_entry")
                 .and_then(Value::as_object)
@@ -224,7 +224,7 @@ mod tests {
                 "gpt-test": {
                     "input_cost_per_token": 0.000001,
                     "output_cost_per_token": 0.000002,
-                    "provider_specific_entry": { "fast": 2, "flex": 0.5 }
+                    "provider_specific_entry": { "fast": 2, "flex": 0.5, "ultrafast": 6 }
                 },
                 "gpt-flex-only": {
                     "input_cost_per_token": 0.000001,
@@ -240,6 +240,7 @@ mod tests {
         let both = pricing.find_exact("gpt-test").unwrap();
         assert_eq!(both.fast_multiplier, 2.0);
         assert_eq!(both.flex_multiplier, 0.5);
+        assert_eq!(both.ultrafast_multiplier, 6.0);
         let flex_only = pricing.find_exact("gpt-flex-only").unwrap();
         assert_eq!(flex_only.fast_multiplier, 1.0);
         assert_eq!(flex_only.flex_multiplier, 0.25);

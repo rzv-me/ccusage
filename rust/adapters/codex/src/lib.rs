@@ -683,6 +683,50 @@ mod tests {
     }
 
     #[test]
+    fn prices_recorded_ultrafast_usage() {
+        let fixture = ccusage_test_support::fs_fixture!({
+            "sessions/ultrafast.jsonl": [
+                json!({
+                    "timestamp": "2026-10-27T10:00:00Z",
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "thread_settings_applied",
+                        "thread_settings": { "service_tier": "ultrafast" },
+                    },
+                }).to_string(),
+                json!({
+                    "timestamp": "2026-10-27T10:00:01Z",
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "token_count",
+                        "info": {
+                            "model": "gpt-6.1-sol",
+                            "last_token_usage": {
+                                "input_tokens": 1_200,
+                                "cached_input_tokens": 200,
+                                "output_tokens": 50,
+                                "total_tokens": 1_250,
+                            },
+                        },
+                    },
+                }).to_string(),
+            ].join("\n"),
+        });
+        let shared = SharedArgs {
+            timezone: Some("UTC".to_string()),
+            ..SharedArgs::default()
+        };
+        let groups =
+            load_groups_from_directory(&fixture.path("sessions"), &shared, AgentReportKind::Daily)
+                .unwrap();
+        let pricing = PricingMap::load_embedded();
+        let cost = calculate_group_cost(&groups["2026-10-27"], &pricing, CodexSpeed::Auto);
+
+        // Published Ultrafast USD/M: $12 input, $0.60 cached input, $60 output.
+        assert!((cost - 0.01512).abs() < 1e-12, "{cost}");
+    }
+
+    #[test]
     fn applies_documented_gpt_6_fast_multipliers() {
         let pricing = PricingMap::load_embedded();
         let usage = CodexModelUsage {
@@ -700,6 +744,61 @@ mod tests {
 
             assert!(standard > 0.0, "{model} has embedded pricing");
             assert!((fast - (standard * 2.0)).abs() < 1e-9, "{model}");
+        }
+    }
+
+    #[test]
+    fn applies_published_ultrafast_rates_and_long_context_prices() {
+        let pricing = PricingMap::load_embedded();
+        let short = CodexModelUsage {
+            input_tokens: 1_200,
+            cached_input_tokens: 200,
+            output_tokens: 50,
+            total_tokens: 1_250,
+            ..CodexModelUsage::default()
+        };
+        let long = CodexModelUsage {
+            input_tokens: 300_000,
+            cached_input_tokens: 250_000,
+            output_tokens: 1_000,
+            total_tokens: 301_000,
+            long_context_input_tokens: 300_000,
+            long_context_cached_input_tokens: 250_000,
+            long_context_output_tokens: 1_000,
+            ..CodexModelUsage::default()
+        };
+        // Expected values come from OpenAI's published USD/M token schedule.
+        for (model, short_cost, long_cost) in [
+            ("gpt-6.1-sol", 0.01512, 1.59),
+            ("gpt-6-astra", 0.0762, 9.45),
+            ("involve/gpt-6.1-sol", 0.01512, 1.59),
+            ("gpt-6-astra-2026-09-17", 0.0762, 9.45),
+        ] {
+            for (usage, expected) in [(&short, short_cost), (&long, long_cost)] {
+                let actual =
+                    calculate_codex_model_cost(model, usage, &pricing, CodexSpeed::Ultrafast);
+                assert!((actual - expected).abs() < 1e-12, "{model}: {actual}");
+            }
+        }
+    }
+
+    #[test]
+    fn unsupported_ultrafast_models_keep_standard_prices() {
+        let pricing = PricingMap::load_embedded();
+        let usage = CodexModelUsage {
+            input_tokens: 1_200,
+            cached_input_tokens: 200,
+            output_tokens: 50,
+            total_tokens: 1_250,
+            ..CodexModelUsage::default()
+        };
+        for model in ["gpt-6-luna", "gpt-6-sol", "gpt-6.1-terra"] {
+            let standard =
+                calculate_codex_model_cost(model, &usage, &pricing, CodexSpeed::Standard);
+            let ultrafast =
+                calculate_codex_model_cost(model, &usage, &pricing, CodexSpeed::Ultrafast);
+            assert!(standard > 0.0);
+            assert_eq!(ultrafast, standard, "{model}");
         }
     }
 
@@ -770,8 +869,11 @@ mod tests {
     #[test]
     fn prices_rollout_service_tiers_across_loading_and_report_modes() {
         for (model, expected_costs) in [
-            ("gpt-test", [45e-6, 40e-6, 55e-6, 20e-6]),
-            ("deepseek-v4-flash", [9.9e-6, 8.8e-6, 12.1e-6, 4.4e-6]),
+            ("gpt-test", [105e-6, 100e-6, 115e-6, 25e-6, 155e-6, 300e-6]),
+            (
+                "deepseek-v4-flash",
+                [23.1e-6, 22e-6, 25.3e-6, 5.5e-6, 34.1e-6, 66e-6],
+            ),
         ] {
             let rollout = |second: u8, tier: &str| {
                 let timestamp = format!("2026-08-16T17:00:{second:02}.000Z");
@@ -808,6 +910,7 @@ mod tests {
                 "sessions/standard.jsonl": rollout(1, "default"),
                 "sessions/flex.jsonl": rollout(2, "flex"),
                 "sessions/fast.jsonl": rollout(3, "priority"),
+                "sessions/ultrafast.jsonl": rollout(5, "ultrafast"),
                 "sessions/unclassified.jsonl": rollout(4, "unknown"),
             });
             let mut pricing = PricingMap::default();
@@ -816,7 +919,7 @@ mod tests {
                     model: {
                         "input_cost_per_token": 0.000001,
                         "output_cost_per_token": 0.000002,
-                        "provider_specific_entry": { "fast": 2, "flex": 0.5 },
+                        "provider_specific_entry": { "fast": 2, "flex": 0.5, "ultrafast": 6 },
                     },
                 })
                 .to_string(),
@@ -854,10 +957,18 @@ mod tests {
                             CodexSpeedPolicy::Forced(CodexServiceTier::Flex),
                             expected_costs[3],
                         ),
+                        (
+                            CodexSpeedPolicy::Auto(CodexServiceTier::Ultrafast),
+                            expected_costs[4],
+                        ),
+                        (
+                            CodexSpeedPolicy::Forced(CodexServiceTier::Ultrafast),
+                            expected_costs[5],
+                        ),
                     ] {
                         let report =
                             report_from_groups(&groups, kind, &pricing, speed, CostMode::Calculate);
-                        assert_eq!(report["totals"]["totalTokens"], 40);
+                        assert_eq!(report["totals"]["totalTokens"], 50);
                         let actual = report["totals"]["costUSD"].as_f64().unwrap();
                         assert!(
                             (actual - expected).abs() < 1e-12,

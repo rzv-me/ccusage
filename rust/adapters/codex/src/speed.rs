@@ -16,6 +16,7 @@ impl From<CodexSpeed> for CodexSpeedPolicy {
             CodexSpeed::Auto => Self::Auto(CodexServiceTier::Standard),
             CodexSpeed::Standard => Self::Forced(CodexServiceTier::Standard),
             CodexSpeed::Fast => Self::Forced(CodexServiceTier::Fast),
+            CodexSpeed::Ultrafast => Self::Forced(CodexServiceTier::Ultrafast),
             CodexSpeed::Flex => Self::Forced(CodexServiceTier::Flex),
         }
     }
@@ -26,6 +27,7 @@ pub fn resolve_codex_speed(requested: CodexSpeed) -> CodexSpeedPolicy {
         CodexSpeed::Auto => CodexSpeedPolicy::Auto(detect_codex_service_tier()),
         CodexSpeed::Standard => CodexSpeedPolicy::Forced(CodexServiceTier::Standard),
         CodexSpeed::Fast => CodexSpeedPolicy::Forced(CodexServiceTier::Fast),
+        CodexSpeed::Ultrafast => CodexSpeedPolicy::Forced(CodexServiceTier::Ultrafast),
         CodexSpeed::Flex => CodexSpeedPolicy::Forced(CodexServiceTier::Flex),
     }
 }
@@ -39,7 +41,9 @@ fn detect_codex_service_tier() -> CodexServiceTier {
                 .and_then(|content| codex_config_service_tier(&content))
         })
         .collect();
-    if configured_tiers.contains(&CodexServiceTier::Fast) {
+    if configured_tiers.contains(&CodexServiceTier::Ultrafast) {
+        CodexServiceTier::Ultrafast
+    } else if configured_tiers.contains(&CodexServiceTier::Fast) {
         CodexServiceTier::Fast
     } else if configured_tiers.contains(&CodexServiceTier::Flex) {
         CodexServiceTier::Flex
@@ -66,6 +70,7 @@ fn codex_config_service_tier(content: &str) -> Option<CodexServiceTier> {
         "default" | "standard" => Some(CodexServiceTier::Standard),
         "fast" | "priority" => Some(CodexServiceTier::Fast),
         "flex" => Some(CodexServiceTier::Flex),
+        "ultrafast" => Some(CodexServiceTier::Ultrafast),
         _ => None,
     }
 }
@@ -92,6 +97,19 @@ mod tests {
             codex_config_service_tier(r#"service_tier = "flex""#,),
             Some(CodexServiceTier::Flex)
         );
+    }
+
+    #[test]
+    fn detects_ultrafast_from_top_level_and_selected_profile() {
+        for content in [
+            "service_tier = 'ultrafast'",
+            "service_tier = 'default'\nprofile = 'work'\n[profiles.work]\nservice_tier = 'ultrafast'",
+        ] {
+            assert_eq!(
+                codex_config_service_tier(content),
+                Some(CodexServiceTier::Ultrafast)
+            );
+        }
     }
 
     #[test]

@@ -837,7 +837,7 @@ fn contextual_codex_help_lists_speed_choices() {
 
     assert!(help.contains("Show Codex token usage grouped by day"));
     assert!(help.contains("USAGE:\n  ccusage codex daily <OPTIONS>"));
-    assert!(help.contains("choices: auto | standard | flex | fast"));
+    assert!(help.contains("choices: auto | standard | flex | fast | ultrafast"));
 }
 
 #[test]
@@ -1302,6 +1302,15 @@ fn parses_codex_speed_option() {
         panic!("expected codex command");
     };
     assert_eq!(args.codex_speed, CodexSpeed::Fast);
+}
+
+#[test]
+fn parses_codex_ultrafast_speed_option() {
+    let cli = parse(&["ccusage", "codex", "daily", "--speed", "ultrafast"]);
+    let Some(Command::Codex(args)) = cli.command else {
+        panic!("expected codex command");
+    };
+    assert_eq!(args.codex_speed, CodexSpeed::Ultrafast);
 }
 
 #[test]

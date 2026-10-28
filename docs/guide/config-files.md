@@ -453,6 +453,7 @@ All fields are optional. Unspecified fields keep existing values. Without a pric
 - `inputCostPerTokenAbove200kTokens`, `outputCostPerTokenAbove200kTokens`, `cacheCreationInputTokenCostAbove200kTokens`, `cacheReadInputTokenCostAbove200kTokens` — tiered pricing past 200k tokens
 - `maxInputTokens` — context window limit (used by the Claude statusline hook)
 - `fastMultiplier` applies when Codex usage uses Fast pricing.
+- `ultrafastMultiplier` applies when Codex usage uses Ultrafast pricing.
 - `flexMultiplier` applies when Codex usage uses Flex pricing.
 
 ### Overrides vs Offline Mode

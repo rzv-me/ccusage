@@ -501,6 +501,9 @@ fn accumulate_codex_event_into_model_usage(
                     Some(&mut timestamped_usage.recorded_standard_usage)
                 }
                 Some(CodexServiceTier::Fast) => Some(&mut timestamped_usage.recorded_fast_usage),
+                Some(CodexServiceTier::Ultrafast) => {
+                    Some(&mut timestamped_usage.recorded_ultrafast_usage)
+                }
                 Some(CodexServiceTier::Flex) => Some(&mut timestamped_usage.recorded_flex_usage),
                 None => None,
             };
@@ -513,6 +516,7 @@ fn accumulate_codex_event_into_model_usage(
         let recorded_usage = match event.service_tier {
             Some(CodexServiceTier::Standard) => Some(&mut model_usage.recorded_standard_usage),
             Some(CodexServiceTier::Fast) => Some(&mut model_usage.recorded_fast_usage),
+            Some(CodexServiceTier::Ultrafast) => Some(&mut model_usage.recorded_ultrafast_usage),
             Some(CodexServiceTier::Flex) => Some(&mut model_usage.recorded_flex_usage),
             None => None,
         };
@@ -561,6 +565,7 @@ fn merge_recorded_codex_usage(
     let recorded_usage = match service_tier {
         CodexServiceTier::Standard => &mut model_usage.recorded_standard_usage,
         CodexServiceTier::Fast => &mut model_usage.recorded_fast_usage,
+        CodexServiceTier::Ultrafast => &mut model_usage.recorded_ultrafast_usage,
         CodexServiceTier::Flex => &mut model_usage.recorded_flex_usage,
     };
     merge_codex_usage_bucket(recorded_usage, usage);
@@ -573,6 +578,7 @@ fn merge_recorded_codex_usage(
         let recorded_usage = match service_tier {
             CodexServiceTier::Standard => &mut timestamped_usage.recorded_standard_usage,
             CodexServiceTier::Fast => &mut timestamped_usage.recorded_fast_usage,
+            CodexServiceTier::Ultrafast => &mut timestamped_usage.recorded_ultrafast_usage,
             CodexServiceTier::Flex => &mut timestamped_usage.recorded_flex_usage,
         };
         merge_codex_usage_bucket(recorded_usage, usage);
@@ -825,6 +831,10 @@ fn merge_codex_model_usage(target: &mut crate::CodexModelUsage, source: crate::C
         source.recorded_standard_usage,
     );
     merge_codex_usage_bucket(&mut target.recorded_fast_usage, source.recorded_fast_usage);
+    merge_codex_usage_bucket(
+        &mut target.recorded_ultrafast_usage,
+        source.recorded_ultrafast_usage,
+    );
     merge_codex_usage_bucket(&mut target.recorded_flex_usage, source.recorded_flex_usage);
     for (timestamp, usage) in source.timestamped_usage {
         let target_usage = target.timestamped_usage.entry(timestamp).or_default();
@@ -836,6 +846,10 @@ fn merge_codex_model_usage(target: &mut crate::CodexModelUsage, source: crate::C
         merge_codex_usage_bucket(
             &mut target_usage.recorded_fast_usage,
             usage.recorded_fast_usage,
+        );
+        merge_codex_usage_bucket(
+            &mut target_usage.recorded_ultrafast_usage,
+            usage.recorded_ultrafast_usage,
         );
         merge_codex_usage_bucket(
             &mut target_usage.recorded_flex_usage,
