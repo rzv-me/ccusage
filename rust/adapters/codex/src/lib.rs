@@ -771,7 +771,7 @@ mod tests {
         for (model, short_cost, long_cost) in [
             ("gpt-6.1-sol", 0.01512, 1.59),
             ("gpt-6-astra", 0.0762, 9.45),
-            ("involve/gpt-6.1-sol", 0.01512, 1.59),
+            ("example/gpt-6.1-sol", 0.01512, 1.59),
             ("gpt-6-astra-2026-09-17", 0.0762, 9.45),
         ] {
             for (usage, expected) in [(&short, short_cost), (&long, long_cost)] {
